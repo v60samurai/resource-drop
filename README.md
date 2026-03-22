@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Resource Drop
 
-## Getting Started
+A minimal link-sharing app for teams and communities. Drop a link, tag it, and it shows up in the feed. No auth, no fluff.
 
-First, run the development server:
+## Tech Stack
+
+- **Next.js 16** (App Router)
+- **Supabase** (PostgreSQL)
+- **Tailwind CSS 4**
+- **TypeScript**
+
+## Setup
+
+### 1. Clone and install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Create Supabase table
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Run this SQL in your Supabase SQL Editor:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```sql
+create table resources (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  url text not null,
+  tag text not null,
+  submitted_by text not null,
+  created_at timestamptz default now()
+);
+```
 
-## Learn More
+### 3. Configure RLS (Row Level Security)
 
-To learn more about Next.js, take a look at the following resources:
+**Option A: Disable RLS** (simplest for public apps)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```sql
+alter table resources disable row level security;
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Option B: Enable public read/insert policies**
 
-## Deploy on Vercel
+```sql
+-- Enable RLS
+alter table resources enable row level security;
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+-- Allow anyone to read
+create policy "Public read" on resources for select using (true);
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+-- Allow anyone to insert
+create policy "Public insert" on resources for insert with check (true);
+```
+
+### 4. Set environment variables
+
+Create `.env.local`:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### 5. Run
+
+```bash
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## Features
+
+- Submit resources with title, URL, tag, and your name
+- Filter by tag (Design, Product, Tech, Career, General)
+- Optimistic UI for instant feedback
+- Relative timestamps
+- Mobile-friendly dark theme
+
+## License
+
+MIT
